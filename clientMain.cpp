@@ -1,4 +1,4 @@
-// client_main.cpp
+// clientMain.cpp
 //   This function serves as the "main" function for the client-side
 #include "TicTacToe.h"
 #include <iostream>
