@@ -19,34 +19,35 @@
 
 //	Function return value	= Number of remote TicTacToe servers (size of serverArray[])
 
-int getServers(SOCKET s, char *broadcastAddress, char *broadcastPort, ServerStruct serverArray[])
-{
-	// This function returns the number of TicTacToe servers that may be found within the current Broadcast Domain.
-	// The last parameter, serverArray[], will contain all of the servers' names, IP addresses and port numbers.
+int getServers(SOCKET s, char *broadcastAddress, char *broadcastPort, ServerStruct serverArray[]) {
+    // This function returns the number of TicTacToe servers that may be found within the current Broadcast Domain.
+    // The last parameter, serverArray[], will contain all of the servers' names, IP addresses and port numbers.
 
-	int numServers = 0;
+    int numServers = 0;
 
-	// Send TicTacToe_QUERY to broadcastAddress using broadcastPort
+    // Send TicTacToe_QUERY to broadcastAddress using broadcastPort
 /****			
 Task 3: Add code here that will send the TicTacToe_QUERY message to the broadcastAddress using the broadcastPort (see function header).
 ****/
 
+    UDP_send(s, TicTacToe_QUERY, strlen(TicTacToe_QUERY) + 1, broadcastAddress, broadcastPort);
 
-	// Receive incoming UDP datagrams (with a maximum of 2 second wait before each UDP_recv() function call
-	// As you read datagrams, if they start with the prefix: TicTacToe_NAME, parse out the server's name
-	// and add the name, host address and port number to serverArray[].  Don't forget to increment numServers.
-	int status = wait(s,2,0);
-	if (status > 0) {
-		int len = 0;
-		char recvBuffer[MAX_RECV_BUF + 1];
-		char host[v4AddressSize];
-		char port[portNumberSize];
+    // Receive incoming UDP datagrams (with a maximum of 2 second wait before each UDP_recv() function call
+    // As you read datagrams, if they start with the prefix: TicTacToe_NAME, parse out the server's name
+    // and add the name, host address and port number to serverArray[].  Don't forget to increment numServers.
+    int status = wait(s, 2, 0);
+    if (status > 0) {
+        int len = 0;
+        char recvBuffer[MAX_RECV_BUF + 1];
+        char host[v4AddressSize];
+        char port[portNumberSize];
 /****			
 Task 4a: Add code here that will receive a response to the broadcast message
-****/		
+****/
 
+        len = UDP_recv(s, recvBuffer, MAX_RECV_BUF, host, port);
 
-		while (status > 0 && len > 0) {
+        while (status > 0 && len > 0) {
 /****			
 Task 4b: Inside this while loop, extract a response, which should be a C-string that looks like "Name=some server's name".
 		 If the response doesn't begin with the characters, "Name=", ignore it.
@@ -57,11 +58,22 @@ Task 4b: Inside this while loop, extract a response, which should be a C-string 
 		 (iv) increment numServers
 ****/
 
-			// Now, we'll see if there is another response.
-			status = wait(s,2,0);
-			if (status > 0)
-				len = UDP_recv(s, recvBuffer, MAX_RECV_BUF, host, port);
-		}
-	}
-	return numServers;
+            std::string recv = recvBuffer;
+
+            int index = recv.find(TicTacToe_NAME);
+            std::string name = recv.substr(index, recv.length());
+
+            serverArray[numServers].name = name;
+            serverArray[numServers].host = host;
+            serverArray[numServers].port = port;
+
+            numServers += 1;
+
+            // Now, we'll see if there is another response.
+            status = wait(s, 2, 0);
+            if (status > 0)
+                len = UDP_recv(s, recvBuffer, MAX_RECV_BUF, host, port);
+        }
+    }
+    return numServers;
 }
